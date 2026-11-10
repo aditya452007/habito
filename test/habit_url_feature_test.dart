@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
-import 'package:streak/features/habits/data/habit.dart';
 import 'package:streak/features/habits/pages/home_page.dart';
-import 'package:streak/features/habits/widgets/habit_card.dart';
 
 import 'support/app_harness.dart';
 
