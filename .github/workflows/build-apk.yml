@@ -132,12 +132,7 @@ jobs:
         run: |
           if [ -n "$KEYSTORE_BASE64" ]; then
             echo "$KEYSTORE_BASE64" | base64 -d > android/app/streak-release.jks
-            cat > android/key.properties <<EOF
-            storePassword=$KEYSTORE_PASSWORD
-            keyPassword=$KEY_PASSWORD
-            keyAlias=$KEY_ALIAS
-            storeFile=streak-release.jks
-            EOF
+            printf "storePassword=%s\nkeyPassword=%s\nkeyAlias=%s\nstoreFile=streak-release.jks\n" "$KEYSTORE_PASSWORD" "$KEY_PASSWORD" "$KEY_ALIAS" > android/key.properties
           else
             echo "No release keystore secret configured, falling back to debug signing"
           fi
