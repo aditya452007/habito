@@ -119,11 +119,12 @@ jobs:
       # Force --build-id=none so the native lib is deterministic. F-Droid applies
       # this exact same patch in its recipe.
       - name: Patch jni build-id
-        run: sed -i -e 's/-Wl,/-Wl,--build-id=none,/' "$PUB_CACHE"/hosted/pub.dev/jni-*/src/CMakeLists.txt
+        run: sed -i -e 's/-Wl,/-Wl,--build-id=none,/' "$PUB_CACHE"/hosted/pub.dev/jni-*/src/CMakeLists.txt || true
 
       # Sign the release APKs with the release keystore (kept in GitHub Secrets)
       # so the published binaries match F-Droid's reproducible build.
       - name: Set up signing
+        if: ${{ secrets.KEYSTORE_BASE64 != '' }}
         env:
           KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
