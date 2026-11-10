@@ -28,6 +28,7 @@ import 'package:streak/features/habits/widgets/habit_heatmap.dart';
 import 'package:streak/features/habits/widgets/focus_only_dialog.dart';
 import 'package:streak/features/habits/widgets/unscheduled_day_dialog.dart';
 import 'package:streak/features/settings/state/settings_controller.dart';
+import 'package:streak/core/utils/url_helper.dart';
 import 'package:streak/features/habits/widgets/streak_label.dart';
 import 'package:streak/core/extensions/color_extensions.dart';
 
@@ -126,6 +127,20 @@ class ExpressHabitCard extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 8),
+                if (habit.url.trim().isNotEmpty) ...[
+                  IconButton(
+                    icon: Icon(
+                      LucideIcons.globe,
+                      size: 20,
+                      color: habit.color.shownIn(context),
+                    ),
+                    tooltip: habit.url,
+                    onPressed: () => openUrl(habit.url),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+                  ),
+                  const SizedBox(width: 4),
+                ],
                 ExpressAction(
                   habit: habit,
                   done: done,

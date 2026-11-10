@@ -33,6 +33,7 @@ import 'package:streak/features/habits/state/notes_controller.dart';
 import 'package:streak/features/habits/widgets/activity_calendar.dart';
 import 'package:streak/features/habits/widgets/day_actions_sheet.dart';
 import 'package:streak/features/habits/widgets/miss_reasons.dart';
+import 'package:streak/core/utils/url_helper.dart';
 import 'package:streak/features/habits/widgets/past_check_notice.dart';
 import 'package:streak/core/minimal/minimal_kit.dart';
 import 'package:streak/features/habits/widgets/minimal_detail_parts.dart';
@@ -211,6 +212,12 @@ class _HabitDetailsPageState extends State<HabitDetailsPage> {
                   ),
             actions: minimal || express
                 ? [
+                    if (habit.url.trim().isNotEmpty)
+                      IconButton(
+                        icon: const Icon(LucideIcons.globe),
+                        tooltip: habit.url,
+                        onPressed: () => openUrl(habit.url),
+                      ),
                     IconButton(
                       icon: const Icon(LucideIcons.share2),
                       tooltip: context.l10n.share_progress,
@@ -226,6 +233,15 @@ class _HabitDetailsPageState extends State<HabitDetailsPage> {
                     const SizedBox(width: 8),
                   ]
                 : [
+                    if (habit.url.trim().isNotEmpty) ...[
+                      GlassIconButton(
+                        icon: LucideIcons.globe,
+                        size: 38,
+                        tooltip: habit.url,
+                        onTap: () => openUrl(habit.url),
+                      ),
+                      const SizedBox(width: 8),
+                    ],
                     GlassIconButton(
                       icon: LucideIcons.share2,
                       size: 38,

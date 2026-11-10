@@ -29,6 +29,7 @@ import 'package:streak/features/habits/widgets/water_cup.dart';
 import 'package:streak/features/settings/state/settings_controller.dart';
 import 'package:streak/app/theme/app_theme.dart';
 import 'package:streak/core/widgets/glass.dart';
+import 'package:streak/core/utils/url_helper.dart';
 
 class HabitCard extends StatelessWidget {
   const HabitCard({
@@ -245,6 +246,23 @@ class HabitCard extends StatelessWidget {
                           ),
                         ),
                         SizedBox(width: compact ? 10 : 14),
+                        if (habit.url.trim().isNotEmpty) ...[
+                          IconButton(
+                            icon: Icon(
+                              LucideIcons.globe,
+                              size: compact ? 18 : 20,
+                              color: habit.color.shownIn(context),
+                            ),
+                            tooltip: habit.url,
+                            onPressed: () => openUrl(habit.url),
+                            padding: EdgeInsets.zero,
+                            constraints: BoxConstraints(
+                              minWidth: compact ? 30 : 36,
+                              minHeight: compact ? 30 : 36,
+                            ),
+                          ),
+                          SizedBox(width: compact ? 4 : 8),
+                        ],
                         if (compact)
                           SizedBox(
                             width: 34,

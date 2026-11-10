@@ -72,6 +72,7 @@ class _HabitFormPageState extends State<HabitFormPage> with ShortcutHost {
 
   late final TextEditingController _name;
   late final TextEditingController _description;
+  late final TextEditingController _url;
   late final TextEditingController _unitLabel;
   late final TextEditingController _dailyCost;
   final _scroll = ScrollController();
@@ -194,6 +195,7 @@ class _HabitFormPageState extends State<HabitFormPage> with ShortcutHost {
     _name = TextEditingController(text: habit?.name ?? '');
     _name.selection = TextSelection.collapsed(offset: _name.text.length);
     _description = TextEditingController(text: habit?.description ?? '');
+    _url = TextEditingController(text: habit?.url ?? '');
     _unitLabel = TextEditingController(text: habit?.unitLabel ?? '');
     _dailyCost = TextEditingController(
       text: (habit?.dailyCost ?? 0) > 0 ? formatAmount(habit!.dailyCost) : '',
@@ -254,6 +256,7 @@ class _HabitFormPageState extends State<HabitFormPage> with ShortcutHost {
   String _snapshot() => jsonEncode([
         _name.text,
         _description.text,
+        _url.text,
         _unitLabel.text,
         _dailyCost.text,
         _icon,
@@ -317,6 +320,7 @@ class _HabitFormPageState extends State<HabitFormPage> with ShortcutHost {
   void dispose() {
     _name.dispose();
     _description.dispose();
+    _url.dispose();
     _unitLabel.dispose();
     _dailyCost.dispose();
     _scroll.dispose();
@@ -380,6 +384,7 @@ class _HabitFormPageState extends State<HabitFormPage> with ShortcutHost {
     final controller = context.read<HabitsController>();
     final name = _name.text.trim();
     final description = _description.text.trim();
+    final url = _url.text.trim();
     final quantitative = _kind == HabitKind.quantitative;
     final negative = _kind == HabitKind.negative;
     final dailyCost = negative
@@ -409,6 +414,7 @@ class _HabitFormPageState extends State<HabitFormPage> with ShortcutHost {
           icon: _icon,
           category: _category,
           description: description,
+          url: url,
           color: _color,
           interval: interval,
           targetFrequency: frequency,
@@ -464,6 +470,7 @@ class _HabitFormPageState extends State<HabitFormPage> with ShortcutHost {
         icon: _icon,
         category: _category,
         description: description,
+        url: url,
         color: _color.toARGB32(),
         interval: interval,
         targetFrequency: frequency,
@@ -691,6 +698,13 @@ class _HabitFormPageState extends State<HabitFormPage> with ShortcutHost {
       AppTextField(
         hint: context.l10n.description_hint,
         controller: _description,
+      ),
+      const SizedBox(height: 26),
+      const SectionLabel('Website URL'),
+      AppTextField(
+        hint: 'https://...',
+        controller: _url,
+        keyboardType: TextInputType.url,
       ),
       const SizedBox(height: 26),
       SectionLabel(context.l10n.habit_kind),
@@ -998,6 +1012,13 @@ class _HabitFormPageState extends State<HabitFormPage> with ShortcutHost {
       AppTextField(
         hint: context.l10n.description_hint,
         controller: _description,
+      ),
+      const SizedBox(height: 16),
+      const SectionLabel('Website URL'),
+      AppTextField(
+        hint: 'https://...',
+        controller: _url,
+        keyboardType: TextInputType.url,
       ),
       const SizedBox(height: 16),
       SectionLabel(context.l10n.habit_kind),
@@ -1454,6 +1475,13 @@ class _HabitFormPageState extends State<HabitFormPage> with ShortcutHost {
             AppTextField(
               hint: context.l10n.description_hint,
               controller: _description,
+            ),
+            const SizedBox(height: 20),
+            const SectionLabel('Website URL'),
+            AppTextField(
+              hint: 'https://...',
+              controller: _url,
+              keyboardType: TextInputType.url,
             ),
             const SizedBox(height: 20),
             SectionLabel(context.l10n.habit_kind),

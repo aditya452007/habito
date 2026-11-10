@@ -89,6 +89,12 @@ void main() {
       expect(restored.substeps.map((s) => s.id), ['s1', 's2']);
       expect(restored.completions[today.dayKey]!.steps, {'s1'});
     });
+
+    test('serialization round-trips website url', () {
+      final habit = _base().copyWith(url: 'https://leetcode.com');
+      final restored = Habit.fromJson(habit.toJson());
+      expect(restored.url, 'https://leetcode.com');
+    });
   });
 
   test('a weekly goal counts the week the way the settings start it', () {

@@ -49,6 +49,7 @@ class Habit {
     this.icon = 'target',
     this.category = '',
     this.description = '',
+    this.url = '',
     this.perDayTarget = 1,
     this.completions = const {},
     this.interval = HabitInterval.daily,
@@ -106,6 +107,7 @@ class Habit {
   final String icon;
   final String category;
   final String description;
+  final String url;
   final Color color;
   final int order;
 
@@ -914,6 +916,7 @@ class Habit {
     String? icon,
     String? category,
     String? description,
+    String? url,
     Color? color,
     int? order,
     double? perDayTarget,
@@ -975,6 +978,7 @@ class Habit {
       icon: icon ?? this.icon,
       category: category ?? this.category,
       description: description ?? this.description,
+      url: url ?? this.url,
       color: color ?? this.color,
       order: order ?? this.order,
       perDayTarget: perDayTarget ?? this.perDayTarget,
@@ -1044,6 +1048,7 @@ class Habit {
         'icon': icon,
         'category': category,
         'description': description,
+        if (url.isNotEmpty) 'url': url,
         'color': color.toARGB32(),
         'order': order,
         'numberOfCompletionsPerDay': perDayTarget,
@@ -1107,6 +1112,7 @@ class Habit {
         icon: (map['icon'] ?? 'target') as String,
         category: (map['category'] ?? '') as String,
         description: (map['description'] ?? '') as String,
+        url: (map['url'] ?? '') as String,
         color: Color(map['color'] as int),
         order: (map['order'] ?? 0) as int,
         perDayTarget:

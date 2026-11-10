@@ -22,6 +22,7 @@ import 'package:streak/features/habits/widgets/heatmap_path.dart';
 import 'package:streak/features/habits/widgets/focus_only_dialog.dart';
 import 'package:streak/features/habits/widgets/unscheduled_day_dialog.dart';
 import 'package:streak/features/settings/state/settings_controller.dart';
+import 'package:streak/core/utils/url_helper.dart';
 
 class _GlyphTile extends StatelessWidget {
   const _GlyphTile({required this.habit, this.size = 52});
@@ -462,6 +463,20 @@ class GridYearCard extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 12),
+                  if (habit.url.trim().isNotEmpty) ...[
+                    IconButton(
+                      icon: Icon(
+                        LucideIcons.globe,
+                        size: 18,
+                        color: habit.color.shownIn(context),
+                      ),
+                      tooltip: habit.url,
+                      onPressed: () => openUrl(habit.url),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                    ),
+                    const SizedBox(width: 4),
+                  ],
                   _CheckTile(
                     habit: habit,
                     done: habit.isCompletedOn(today),

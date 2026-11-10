@@ -17,8 +17,8 @@ import 'package:streak/core/express/express_surface.dart';
 import 'package:streak/core/express/express_type.dart';
 import 'package:streak/core/minimal/minimal_type.dart';
 
-const _kGitHubUrl = 'https://github.com/InlitX/streak';
-const _kProfileUrl = 'https://github.com/InlitX';
+const _kGitHubUrl = 'https://github.com/aditya452007/streak';
+const _kProfileUrl = 'https://github.com/aditya452007';
 const _kCoffeeUrl = 'https://ko-fi.com/inlitx';
 const _base = Duration(milliseconds: 340);
 
