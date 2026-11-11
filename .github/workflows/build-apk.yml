@@ -1,13 +1,17 @@
 name: Build & Release
 
 on:
+  push:
+    branches: [main]
+    tags:
+      - 'v*'
   pull_request:
     branches: [main]
   workflow_dispatch:
     inputs:
       tag:
         description: 'Release tag / version, e.g. v1.1.0'
-        required: true
+        required: false
         type: string
 
 permissions:
@@ -25,9 +29,9 @@ jobs:
   build:
     name: Build split APKs
     runs-on: ubuntu-latest
-    # Only as a pull request check. A tagged run goes straight to release, which
-    # builds and signs on its own, so nothing is compiled twice.
-    if: github.event_name == 'pull_request'
+    # Runs automatically on pull requests and pushes to main. A tagged run goes straight
+    # to release, which builds and signs on its own, so nothing is compiled twice.
+    if: github.event_name == 'pull_request' || (github.event_name == 'push' && !startsWith(github.ref, 'refs/tags/'))
 
     steps:
       - name: Checkout
@@ -79,9 +83,8 @@ jobs:
   release:
     name: Publish release
     runs-on: ubuntu-latest
-    # Only when manually dispatched with a tag. The notes are generated from the
-    # merged pull requests, and the rest is filled in by hand after publishing.
-    if: github.event_name == 'workflow_dispatch'
+    # Runs when manually dispatched or when a version tag (v*) is pushed.
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v'))
 
     # Reproducible build: keep the pub cache at a fixed path inside the workspace
     # (/home/runner/work/streak/streak/.pub-cache). F-Droid relocates its build to
@@ -155,8 +158,8 @@ jobs:
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ inputs.tag }}
-          name: ${{ inputs.tag }}
+          tag_name: ${{ inputs.tag || github.ref_name }}
+          name: ${{ inputs.tag || github.ref_name }}
           generate_release_notes: true
           files: |
             build/app/outputs/flutter-apk/Streak-arm64-v8a.apk
@@ -169,7 +172,7 @@ jobs:
     # Runs after the release exists and only adds the zip to it. Kept separate on
     # purpose: if the Windows build ever breaks, the APKs are already published.
     needs: release
-    if: github.event_name == 'workflow_dispatch'
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v'))
 
     steps:
       - name: Checkout
@@ -199,13 +202,15 @@ jobs:
       - name: Build the installer
         run: |
           $iscc = (Get-ChildItem "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe").FullName
-          & $iscc "/DAppVersion=$('${{ inputs.tag }}'.TrimStart('v'))" windows\installer.iss
+          $tag = '${{ inputs.tag || github.ref_name }}'
+          $ver = $tag.TrimStart('v')
+          & $iscc "/DAppVersion=$ver" windows\installer.iss
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
       - name: Add it to the release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ inputs.tag }}
+          tag_name: ${{ inputs.tag || github.ref_name }}
           files: |
             Streak-windows-x64.zip
             build/installer/Streak-windows-x64-setup.exe
@@ -216,7 +221,7 @@ jobs:
     container: ubuntu:22.04
     timeout-minutes: 30
     needs: release
-    if: github.event_name == 'workflow_dispatch'
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v'))
 
     steps:
       - name: Install build dependencies
@@ -247,7 +252,7 @@ jobs:
       - name: Add them to the release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ inputs.tag }}
+          tag_name: ${{ inputs.tag || github.ref_name }}
           files: |
             Streak-linux-x64.tar.gz
             Streak-x86_64.AppImage
