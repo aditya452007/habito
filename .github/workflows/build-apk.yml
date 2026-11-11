@@ -26,16 +26,37 @@ env:
   SIGNPATH_PROJECT: 'streak'
 
 jobs:
-  build:
-    name: Build split APKs
+  release:
+    name: Publish release
     runs-on: ubuntu-latest
-    # Runs automatically on pull requests and pushes to main. A tagged run goes straight
-    # to release, which builds and signs on its own, so nothing is compiled twice.
-    if: github.event_name == 'pull_request' || (github.event_name == 'push' && !startsWith(github.ref, 'refs/tags/'))
+    outputs:
+      tag: ${{ steps.tag.outputs.tag }}
+    # Main entry point for CI/CD: runs on pushes to main, tag pushes (v*), and manual dispatch.
+    if: github.event_name == 'workflow_dispatch' || github.event_name == 'push'
+
+    # Reproducible build: keep the pub cache at a fixed path inside the workspace
+    # (/home/runner/work/streak/streak/.pub-cache). F-Droid relocates its build to
+    # this exact same path and uses the same PUB_CACHE, so the embedded paths match.
+    env:
+      PUB_CACHE: ${{ github.workspace }}/.pub-cache
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Determine release tag
+        id: tag
+        run: |
+          if [ -n "${{ inputs.tag }}" ]; then
+            TAG="${{ inputs.tag }}"
+          elif [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            TAG="${{ github.ref_name }}"
+          else
+            VERSION=$(grep '^version: ' pubspec.yaml | sed 's/version: //' | cut -d '+' -f 1 | tr -d '[:space:]')
+            TAG="v${VERSION}"
+          fi
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+          echo "Determined release tag: $TAG"
 
       - name: Set up Java
         uses: actions/setup-java@v4
@@ -52,62 +73,6 @@ jobs:
 
       - name: Show versions
         run: flutter --version
-
-      - name: Install dependencies
-        run: flutter pub get
-
-      - name: Analyze
-        run: flutter analyze --no-fatal-infos
-
-      - name: Test
-        run: flutter test
-
-      # ABI splits keep each APK small (~15-20 MB) instead of one ~58 MB fat APK.
-      - name: Build split APKs
-        run: flutter build apk --release --split-per-abi
-
-      - name: Rename APKs
-        run: |
-          cd build/app/outputs/flutter-apk
-          mv app-arm64-v8a-release.apk     Streak-arm64-v8a.apk
-          mv app-armeabi-v7a-release.apk   Streak-armeabi-v7a.apk
-          mv app-x86_64-release.apk        Streak-x86_64.apk
-
-      - name: Upload APK artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: streak-apks
-          path: build/app/outputs/flutter-apk/Streak-*.apk
-          if-no-files-found: error
-
-  release:
-    name: Publish release
-    runs-on: ubuntu-latest
-    # Runs when manually dispatched or when a version tag (v*) is pushed.
-    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v'))
-
-    # Reproducible build: keep the pub cache at a fixed path inside the workspace
-    # (/home/runner/work/streak/streak/.pub-cache). F-Droid relocates its build to
-    # this exact same path and uses the same PUB_CACHE, so the embedded paths match.
-    env:
-      PUB_CACHE: ${{ github.workspace }}/.pub-cache
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Set up Java
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: '17'
-
-      - name: Set up Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          channel: stable
-          flutter-version: ${{ env.FLUTTER_VERSION }}
-          cache: true
 
       - name: Install dependencies
         run: flutter pub get
@@ -158,8 +123,8 @@ jobs:
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ inputs.tag || github.ref_name }}
-          name: ${{ inputs.tag || github.ref_name }}
+          tag_name: ${{ steps.tag.outputs.tag }}
+          name: ${{ steps.tag.outputs.tag }}
           generate_release_notes: true
           files: |
             build/app/outputs/flutter-apk/Streak-arm64-v8a.apk
@@ -172,7 +137,7 @@ jobs:
     # Runs after the release exists and only adds the zip to it. Kept separate on
     # purpose: if the Windows build ever breaks, the APKs are already published.
     needs: release
-    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v'))
+    if: github.event_name == 'workflow_dispatch' || github.event_name == 'push'
 
     steps:
       - name: Checkout
@@ -202,7 +167,7 @@ jobs:
       - name: Build the installer
         run: |
           $iscc = (Get-ChildItem "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe").FullName
-          $tag = '${{ inputs.tag || github.ref_name }}'
+          $tag = '${{ needs.release.outputs.tag }}'
           $ver = $tag.TrimStart('v')
           & $iscc "/DAppVersion=$ver" windows\installer.iss
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
@@ -210,7 +175,7 @@ jobs:
       - name: Add it to the release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ inputs.tag || github.ref_name }}
+          tag_name: ${{ needs.release.outputs.tag }}
           files: |
             Streak-windows-x64.zip
             build/installer/Streak-windows-x64-setup.exe
@@ -221,7 +186,7 @@ jobs:
     container: ubuntu:22.04
     timeout-minutes: 30
     needs: release
-    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v'))
+    if: github.event_name == 'workflow_dispatch' || github.event_name == 'push'
 
     steps:
       - name: Install build dependencies
@@ -252,7 +217,60 @@ jobs:
       - name: Add them to the release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ inputs.tag || github.ref_name }}
+          tag_name: ${{ needs.release.outputs.tag }}
           files: |
             Streak-linux-x64.tar.gz
             Streak-x86_64.AppImage
+
+  build:
+    name: Pull request check
+    runs-on: ubuntu-latest
+    # Only for pull requests to verify tests and build without publishing a release.
+    if: github.event_name == 'pull_request'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+
+      - name: Show versions
+        run: flutter --version
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Analyze
+        run: flutter analyze --no-fatal-infos
+
+      - name: Test
+        run: flutter test
+
+      # ABI splits keep each APK small (~15-20 MB) instead of one ~58 MB fat APK.
+      - name: Build split APKs
+        run: flutter build apk --release --split-per-abi
+
+      - name: Rename APKs
+        run: |
+          cd build/app/outputs/flutter-apk
+          mv app-arm64-v8a-release.apk     Streak-arm64-v8a.apk
+          mv app-armeabi-v7a-release.apk   Streak-armeabi-v7a.apk
+          mv app-x86_64-release.apk        Streak-x86_64.apk
+
+      - name: Upload APK artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: streak-apks
+          path: build/app/outputs/flutter-apk/Streak-*.apk
+          if-no-files-found: error
