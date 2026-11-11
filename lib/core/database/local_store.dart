@@ -494,6 +494,7 @@ class LocalStore {
 
   static T setting<T>(String key, T fallback) {
     final value = _settings.get(key, defaultValue: fallback);
+    if (T == double && value is num) return value.toDouble() as T;
     return value is T ? value : fallback;
   }
 

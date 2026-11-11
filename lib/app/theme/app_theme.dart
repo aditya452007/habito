@@ -234,19 +234,19 @@ class AppTheme {
       onPrimary: accent.computeLuminance() > 0.179 ? Colors.black : Colors.white,
       surface: isDark
           ? (minimal ? AppPalette.paperDark : AppPalette.darkSurface)
-          : (minimal ? const Color(0xFFFFFFFF) : const Color(0xFFFAFAFC)),
+          : (minimal ? const Color(0xFFF7F8FA) : const Color(0xFFEBECEF)),
       surfaceContainer: isDark
-          ? (minimal ? AppPalette.paperDarkCard : const Color(0xFF1A1A1A))
-          : (minimal ? const Color(0xFFF6F6F8) : const Color(0xFFF4F4F8)),
+          ? (minimal ? AppPalette.paperDarkCard : AppPalette.darkCard)
+          : (minimal ? const Color(0xFFFFFFFF) : const Color(0xFFF7F8FA)),
       surfaceContainerHigh: isDark
-          ? (minimal ? const Color(0xFF1A1A1A) : const Color(0xFF1F1F22))
-          : (minimal ? const Color(0xFFEFEFF2) : const Color(0xFFEDEDF2)),
+          ? (minimal ? const Color(0xFF22242D) : AppPalette.darkElevated)
+          : (minimal ? const Color(0xFFECEEF2) : const Color(0xFFE2E4E9)),
       surfaceContainerHighest: isDark
-          ? (minimal ? AppPalette.paperDarkRaised : AppPalette.darkElevated)
-          : (minimal ? const Color(0xFFE9E9EC) : const Color(0xFFE4E4EC)),
+          ? (minimal ? AppPalette.paperDarkRaised : const Color(0xFF323542))
+          : (minimal ? const Color(0xFFE1E4EB) : const Color(0xFFD6D9E1)),
       outlineVariant: isDark
-          ? (minimal ? const Color(0xFF272727) : AppPalette.darkBorder)
-          : (minimal ? const Color(0xFFE4E4E8) : const Color(0xFFD9D9E0)),
+          ? (minimal ? const Color(0xFF2E313E) : AppPalette.darkBorder)
+          : (minimal ? const Color(0xFFD3D7E2) : const Color(0xFFC7CBD6)),
     );
     final scheme = colors == null ? base : _paint(base, colors);
 

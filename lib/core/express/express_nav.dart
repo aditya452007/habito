@@ -144,6 +144,7 @@ class ExpressNavRail extends StatelessWidget {
     required this.onSelect,
     required this.brand,
     this.compact = false,
+    this.customWidth,
   });
 
   static const width = 224.0;
@@ -153,11 +154,12 @@ class ExpressNavRail extends StatelessWidget {
   final ValueChanged<int> onSelect;
   final Widget brand;
   final bool compact;
+  final double? customWidth;
 
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      width: compact ? 80 : width,
+      width: customWidth ?? (compact ? 80 : width),
       child: SafeArea(
         right: false,
         child: Padding(

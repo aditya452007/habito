@@ -19,6 +19,7 @@ class MinimalNavRail extends StatelessWidget {
     required this.brand,
     this.footer,
     this.compact = false,
+    this.customWidth,
   });
 
   static const width = 208.0;
@@ -29,11 +30,12 @@ class MinimalNavRail extends StatelessWidget {
   final Widget brand;
   final Widget? footer;
   final bool compact;
+  final double? customWidth;
 
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      width: compact ? 76 : width,
+      width: customWidth ?? (compact ? 76 : width),
       child: SafeArea(
         right: false,
         child: Padding(

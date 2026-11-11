@@ -91,13 +91,13 @@ ThemeColors _defaultColors(Brightness brightness, Color accent) {
   final dark = brightness == Brightness.dark;
   final tokens = dark ? AppTokens.dark : AppTokens.light;
   return ThemeColors(
-    background: dark ? AppPalette.darkBackground : const Color(0xFFEDEDF3),
-    card: dark ? AppPalette.darkCard : Colors.white,
-    high: dark ? const Color(0xFF1F1F22) : const Color(0xFFEDEDF2),
-    highest: dark ? AppPalette.darkElevated : const Color(0xFFE4E4EC),
-    outline: dark ? AppPalette.darkBorder : const Color(0xFFD9D9E0),
-    text: dark ? Colors.white : const Color(0xFF1C1C1E),
-    muted: tokens.muted,
+    background: dark ? AppPalette.darkBackground : const Color(0xFFEBECEF),
+    card: dark ? AppPalette.darkCard : const Color(0xFFF7F8FA),
+    high: dark ? AppPalette.darkElevated : const Color(0xFFE2E4E9),
+    highest: dark ? const Color(0xFF323542) : const Color(0xFFD6D9E1),
+    outline: dark ? AppPalette.darkBorder : const Color(0xFFC7CBD6),
+    text: dark ? const Color(0xFFE2E4EB) : const Color(0xFF22252C),
+    muted: dark ? const Color(0xFF8F93A3) : const Color(0xFF646876),
     accent: AppTheme.adaptAccent(accent, dark),
     success: tokens.success,
     warning: tokens.warning,

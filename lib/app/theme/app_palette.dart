@@ -12,15 +12,15 @@ class AppPalette {
   static const danger = Color(0xFFEF4444);
   static const info = Color(0xFF3B82F6);
 
-  static const darkBackground = Color(0xFF0D0D0D);
-  static const paperDark = Color(0xFF090909);
-  static const paperDarkCard = Color(0xFF131313);
-  static const paperDarkRaised = Color(0xFF212121);
-  static const darkSurface = Color(0xFF141414);
-  static const darkCard = Color(0xFF1A1A1A);
-  static const darkElevated = Color(0xFF232326);
-  static const darkBorder = Color(0xFF2C2C2E);
-  static const textSecondary = Color(0xFF8E8E93);
+  static const darkBackground = Color(0xFF141519);
+  static const paperDark = Color(0xFF111216);
+  static const paperDarkCard = Color(0xFF191A20);
+  static const paperDarkRaised = Color(0xFF23252E);
+  static const darkSurface = Color(0xFF16171D);
+  static const darkCard = Color(0xFF1C1D24);
+  static const darkElevated = Color(0xFF252731);
+  static const darkBorder = Color(0xFF2E313E);
+  static const textSecondary = Color(0xFF8F93A3);
 
   static const List<Color> habitColors = [
 

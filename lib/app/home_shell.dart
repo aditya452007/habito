@@ -9,7 +9,6 @@ import 'package:streak/app/theme/app_tokens.dart';
 import 'package:streak/app/classic_nav_bar.dart';
 import 'package:streak/core/express/express_nav.dart';
 import 'package:streak/core/express/express_shapes.dart';
-import 'package:streak/core/express/express_surface.dart';
 import 'package:streak/core/express/express_type.dart';
 import 'package:streak/core/i18n/l10n.dart';
 import 'package:streak/core/minimal/minimal_kit.dart';
@@ -193,10 +192,13 @@ class _HomeShellState extends State<HomeShell>
     BuildContext context,
     List<_Tab> tabs,
     _Tab current,
-    int style,
-  ) {
+    int style, {
+    bool? compact,
+    double? width,
+    VoidCallback? onToggleCollapse,
+  }) {
     final index = tabs.indexOf(current);
-    final compact = isCompactRail(context);
+    final isCompact = compact ?? isCompactRail(context);
     if (style == 2) {
       return ExpressNavRail(
         items: [
@@ -205,8 +207,9 @@ class _HomeShellState extends State<HomeShell>
         ],
         index: index,
         onSelect: (i) => _select(tabs, tabs[i]),
-        brand: _RailBrand(compact: compact),
-        compact: compact,
+        brand: _RailBrand(compact: isCompact, onToggleCollapse: onToggleCollapse),
+        compact: isCompact,
+        customWidth: width,
       );
     }
     if (style == 1) {
@@ -217,14 +220,17 @@ class _HomeShellState extends State<HomeShell>
         ],
         index: index,
         onSelect: (i) => _select(tabs, tabs[i]),
-        brand: _RailBrand(compact: compact),
-        compact: compact,
+        brand: _RailBrand(compact: isCompact, onToggleCollapse: onToggleCollapse),
+        compact: isCompact,
+        customWidth: width,
       );
     }
     return _NavRail(
       tabs: tabs,
       current: current,
-      compact: compact,
+      compact: isCompact,
+      width: width,
+      onToggleCollapse: onToggleCollapse,
       onSelect: (tab) => _select(tabs, tab),
     );
   }
@@ -317,25 +323,34 @@ class _HomeShellState extends State<HomeShell>
         tabs,
         current,
         _SplitScaffold(
-        full: current == _Tab.stats,
-        single: !wide,
-        rail: _rail(context, tabs, current, settings.appStyle),
-        page: FadeThrough(
-          animation: _swap,
-          child: IndexedStack(
-            index: tabs.indexOf(current),
-            children: [
-              for (final tab in tabs)
-                TickerMode(
-                  enabled: tab == current,
-                  child: _visited.contains(tab)
-                      ? _pageOf(tab)
-                      : const SizedBox.shrink(),
-                ),
-            ],
+          full: current == _Tab.stats,
+          single: !wide,
+          railBuilder: (context, compact, width, onCollapse) => _rail(
+            context,
+            tabs,
+            current,
+            settings.appStyle,
+            compact: compact,
+            width: width,
+            onToggleCollapse: onCollapse,
+          ),
+          rail: _rail(context, tabs, current, settings.appStyle),
+          page: FadeThrough(
+            animation: _swap,
+            child: IndexedStack(
+              index: tabs.indexOf(current),
+              children: [
+                for (final tab in tabs)
+                  TickerMode(
+                    enabled: tab == current,
+                    child: _visited.contains(tab)
+                        ? _pageOf(tab)
+                        : const SizedBox.shrink(),
+                  ),
+              ],
+            ),
           ),
         ),
-      ),
       );
     }
 
@@ -457,15 +472,183 @@ class _StableMediaState extends State<_StableMedia> {
   }
 }
 
+class _DraggableDivider extends StatefulWidget {
+  const _DraggableDivider({
+    required this.onDragUpdate,
+    this.onDragEnd,
+    this.onDoubleTap,
+    this.tooltip,
+  });
+
+  final ValueChanged<DragUpdateDetails> onDragUpdate;
+  final VoidCallback? onDragEnd;
+  final VoidCallback? onDoubleTap;
+  final String? tooltip;
+
+  @override
+  State<_DraggableDivider> createState() => _DraggableDividerState();
+}
+
+class _DraggableDividerState extends State<_DraggableDivider> {
+  bool _hovered = false;
+  bool _dragging = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final active = _hovered || _dragging;
+    final dividerColor = active
+        ? theme.colorScheme.primary.withValues(alpha: 0.85)
+        : theme.colorScheme.outlineVariant.withValues(alpha: 0.35);
+
+    Widget bar = MouseRegion(
+      cursor: SystemMouseCursors.resizeColumn,
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onDoubleTap: widget.onDoubleTap,
+        onHorizontalDragStart: (_) => setState(() => _dragging = true),
+        onHorizontalDragUpdate: widget.onDragUpdate,
+        onHorizontalDragEnd: (_) {
+          setState(() => _dragging = false);
+          widget.onDragEnd?.call();
+        },
+        onHorizontalDragCancel: () {
+          setState(() => _dragging = false);
+          widget.onDragEnd?.call();
+        },
+        child: SizedBox(
+          width: 12,
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 150),
+                width: active ? 2 : 1,
+                color: dividerColor,
+              ),
+              AnimatedOpacity(
+                duration: const Duration(milliseconds: 150),
+                opacity: active ? 1.0 : 0.0,
+                child: Container(
+                  width: 4,
+                  height: 28,
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.primary,
+                    borderRadius: BorderRadius.circular(2),
+                    boxShadow: [
+                      BoxShadow(
+                        color: theme.colorScheme.primary.withValues(alpha: 0.3),
+                        blurRadius: 4,
+                        spreadRadius: 1,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    if (widget.tooltip != null) {
+      bar = Tooltip(
+        message: widget.tooltip!,
+        waitDuration: const Duration(milliseconds: 500),
+        child: bar,
+      );
+    }
+
+    return bar;
+  }
+}
+
+class _PanelPillButton extends StatefulWidget {
+  const _PanelPillButton({
+    required this.icon,
+    required this.onTap,
+    this.tooltip,
+  });
+
+  final IconData icon;
+  final VoidCallback onTap;
+  final String? tooltip;
+
+  @override
+  State<_PanelPillButton> createState() => _PanelPillButtonState();
+}
+
+class _PanelPillButtonState extends State<_PanelPillButton> {
+  bool _hovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final active = _hovered;
+
+    Widget btn = Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: widget.onTap,
+        borderRadius: BorderRadius.circular(8),
+        onHover: (hovering) => setState(() => _hovered = hovering),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          width: 32,
+          height: 32,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: active
+                ? scheme.surfaceContainerHighest.withValues(alpha: 0.6)
+                : scheme.surfaceContainerHigh.withValues(alpha: 0.3),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: active
+                  ? scheme.outlineVariant.withValues(alpha: 0.5)
+                  : scheme.outlineVariant.withValues(alpha: 0.25),
+              width: 1,
+            ),
+          ),
+          child: Icon(
+            widget.icon,
+            size: 16,
+            color: active ? scheme.onSurface : scheme.onSurfaceVariant,
+          ),
+        ),
+      ),
+    );
+
+    if (widget.tooltip != null) {
+      btn = Tooltip(
+        message: widget.tooltip!,
+        waitDuration: const Duration(milliseconds: 300),
+        child: btn,
+      );
+    }
+
+    return btn;
+  }
+}
+
 class _SplitScaffold extends StatefulWidget {
   const _SplitScaffold({
     this.rail,
+    this.railBuilder,
     required this.page,
     this.full = false,
     this.single = false,
   });
 
   final Widget? rail;
+  final Widget Function(
+    BuildContext context,
+    bool compact,
+    double width,
+    VoidCallback onCollapse,
+  )? railBuilder;
   final Widget page;
   final bool full;
   final bool single;
@@ -475,16 +658,138 @@ class _SplitScaffold extends StatefulWidget {
 }
 
 class _SplitScaffoldState extends State<_SplitScaffold> {
+  static const double defaultRailWidth = 212.0;
+  static const double compactRailWidth = 76.0;
+  static const double minRailWidth = 76.0;
+  static const double maxRailWidth = 320.0;
+  static const double snapRailCloseThreshold = 55.0;
+  static const double snapRailCompactThreshold = 125.0;
+
+  static const double defaultPaneWidth = 440.0;
+  static const double minPaneWidth = 280.0;
+  static const double maxPaneWidth = 750.0;
+  static const double snapPaneCloseThreshold = 220.0;
+
+  late double _railWidth;
+  late double _paneWidth;
+  late bool _railOpen;
+  late bool _paneOpen;
+  late bool _detailOpen;
+
   @override
   void initState() {
     super.initState();
     HardwareKeyboard.instance.addHandler(_onKey);
+    _railWidth = LocalStore.setting<double>('layout_rail_width', defaultRailWidth);
+    _paneWidth = LocalStore.setting<double>('layout_pane_width', defaultPaneWidth);
+    _railOpen = LocalStore.setting<bool>('layout_rail_open', true);
+    _paneOpen = LocalStore.setting<bool>('layout_pane_open', true);
+    _detailOpen = LocalStore.setting<bool>('layout_detail_open', true);
   }
 
   @override
   void dispose() {
     HardwareKeyboard.instance.removeHandler(_onKey);
     super.dispose();
+  }
+
+  void _persistLayout() {
+    LocalStore.writeSetting('layout_rail_width', _railWidth);
+    LocalStore.writeSetting('layout_pane_width', _paneWidth);
+    LocalStore.writeSetting('layout_rail_open', _railOpen);
+    LocalStore.writeSetting('layout_pane_open', _paneOpen);
+    LocalStore.writeSetting('layout_detail_open', _detailOpen);
+  }
+
+  void _toggleRail([bool? open]) {
+    setState(() {
+      _railOpen = open ?? !_railOpen;
+      if (_railOpen && _railWidth < minRailWidth) {
+        _railWidth = defaultRailWidth;
+      }
+    });
+    _persistLayout();
+  }
+
+  void _togglePane([bool? open]) {
+    setState(() {
+      _paneOpen = open ?? !_paneOpen;
+      if (_paneOpen && _paneWidth < minPaneWidth) {
+        _paneWidth = defaultPaneWidth;
+      }
+    });
+    _persistLayout();
+  }
+
+  void _toggleDetail([bool? open]) {
+    setState(() {
+      _detailOpen = open ?? !_detailOpen;
+    });
+    _persistLayout();
+  }
+
+  void _onDragRailUpdate(DragUpdateDetails details) {
+    setState(() {
+      _railWidth = (_railWidth + details.delta.dx).clamp(0.0, maxRailWidth);
+      if (!_railOpen && details.delta.dx > 10) {
+        _railOpen = true;
+      }
+    });
+  }
+
+  void _onDragRailEnd() {
+    setState(() {
+      if (_railWidth < snapRailCloseThreshold) {
+        _railOpen = false;
+        _railWidth = defaultRailWidth;
+      } else if (_railWidth < snapRailCompactThreshold) {
+        _railOpen = true;
+        _railWidth = compactRailWidth;
+      } else {
+        _railOpen = true;
+        _railWidth = _railWidth.clamp(minRailWidth, maxRailWidth);
+      }
+    });
+    _persistLayout();
+  }
+
+  void _resetRail() {
+    setState(() {
+      _railOpen = true;
+      _railWidth = defaultRailWidth;
+    });
+    _persistLayout();
+  }
+
+  void _onDragPaneUpdate(DragUpdateDetails details) {
+    setState(() {
+      _paneWidth = (_paneWidth + details.delta.dx).clamp(0.0, maxPaneWidth);
+      if (!_paneOpen && details.delta.dx > 10) {
+        _paneOpen = true;
+      }
+    });
+  }
+
+  void _onDragPaneEnd() {
+    setState(() {
+      if (_paneWidth < snapPaneCloseThreshold) {
+        _paneOpen = false;
+        _paneWidth = defaultPaneWidth;
+      } else {
+        _paneOpen = true;
+        _paneWidth = _paneWidth.clamp(minPaneWidth, maxPaneWidth);
+      }
+    });
+    _persistLayout();
+  }
+
+  void _resetPane() {
+    setState(() {
+      _paneOpen = true;
+      _paneWidth = defaultPaneWidth;
+      _detailOpen = true;
+    });
+    _persistLayout();
   }
 
   bool _onKey(KeyEvent event) {
@@ -507,61 +812,115 @@ class _SplitScaffoldState extends State<_SplitScaffold> {
         ? Theme.of(context).colorScheme.surfaceContainerLowest
         : null;
 
+    final isRailCompact = _railWidth <= 120.0;
+
+    Widget? railWidget;
+    if (_railOpen) {
+      if (widget.railBuilder != null) {
+        railWidget = widget.railBuilder!(
+          context,
+          isRailCompact,
+          _railWidth,
+          () => _toggleRail(false),
+        );
+      } else if (widget.rail != null) {
+        railWidget = widget.rail!;
+      }
+
+      if (railWidget != null && tint != null) {
+        railWidget = ColoredBox(color: tint, child: railWidget);
+      }
+    }
+
     return Scaffold(
-      body: Row(
+      body: Stack(
         children: [
-          if (widget.rail != null) ...[
-            tint == null
-                ? widget.rail!
-                : ColoredBox(color: tint, child: widget.rail!),
-            const _Line(),
-          ],
-          if (widget.single)
-            Expanded(
-              child: Center(
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: railPageWidth),
-                  child: widget.page,
+          Row(
+            children: [
+              if (_railOpen && railWidget != null) ...[
+                SizedBox(
+                  width: _railWidth,
+                  child: ClipRect(child: railWidget),
                 ),
-              ),
-            )
-          else if (widget.full)
-            Expanded(child: widget.page)
-          else ...[
-            SizedBox(
-              width: isCompactRail(context) ? compactPaneWidth : paneWidth,
-              child: widget.page,
-            ),
-            const _Line(),
-            Expanded(
-              child: Center(
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: detailWidth),
-                  child: const SizedBox.expand(child: _DetailPane()),
+                _DraggableDivider(
+                  tooltip: 'Drag to resize sidebar • Double-tap to reset',
+                  onDragUpdate: _onDragRailUpdate,
+                  onDragEnd: _onDragRailEnd,
+                  onDoubleTap: _resetRail,
                 ),
+              ],
+              if (widget.single)
+                Expanded(
+                  child: Center(
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: railPageWidth),
+                      child: widget.page,
+                    ),
+                  ),
+                )
+              else if (widget.full)
+                Expanded(child: widget.page)
+              else ...[
+                if (_paneOpen) ...[
+                  if (!_detailOpen)
+                    Expanded(child: widget.page)
+                  else ...[
+                    SizedBox(
+                      width: _paneWidth,
+                      child: ClipRect(child: widget.page),
+                    ),
+                    _DraggableDivider(
+                      tooltip: 'Drag to resize sections • Double-tap to reset',
+                      onDragUpdate: _onDragPaneUpdate,
+                      onDragEnd: _onDragPaneEnd,
+                      onDoubleTap: _resetPane,
+                    ),
+                  ],
+                ],
+                if (_detailOpen)
+                  Expanded(
+                    child: Center(
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: detailWidth),
+                        child: const SizedBox.expand(child: _DetailPane()),
+                      ),
+                    ),
+                  ),
+              ],
+            ],
+          ),
+          if (!_railOpen)
+            Positioned(
+              left: 14,
+              top: 14,
+              child: _PanelPillButton(
+                icon: LucideIcons.panelLeftOpen,
+                tooltip: 'Expand sidebar',
+                onTap: () => _toggleRail(true),
               ),
             ),
-          ],
+          if (!_paneOpen && !widget.single && !widget.full)
+            Positioned(
+              left: _railOpen ? _railWidth + 24 : 54,
+              top: 14,
+              child: _PanelPillButton(
+                icon: LucideIcons.columns2,
+                tooltip: 'Show master list',
+                onTap: () => _togglePane(true),
+              ),
+            ),
+          if (!widget.single && !widget.full)
+            Positioned(
+              right: 14,
+              top: 14,
+              child: _PanelPillButton(
+                icon: _detailOpen ? LucideIcons.panelRightClose : LucideIcons.panelRightOpen,
+                tooltip: _detailOpen ? 'Collapse detail pane' : 'Expand detail pane',
+                onTap: () => _toggleDetail(),
+              ),
+            ),
         ],
       ),
-    );
-  }
-}
-
-class _Line extends StatelessWidget {
-  const _Line();
-
-  @override
-  Widget build(BuildContext context) {
-    final settings = context.watch<SettingsController>();
-    return VerticalDivider(
-      width: 1,
-      thickness: 1,
-      color: settings.isMinimalStyle
-          ? minimalLineColor(context)
-          : settings.isExpressStyle
-          ? expressHairlineColor(context)
-          : Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.32),
     );
   }
 }
@@ -665,6 +1024,8 @@ class _NavRail extends StatelessWidget {
     required this.current,
     required this.compact,
     required this.onSelect,
+    this.width,
+    this.onToggleCollapse,
   });
 
   static const _width = 212.0;
@@ -673,11 +1034,13 @@ class _NavRail extends StatelessWidget {
   final _Tab current;
   final bool compact;
   final void Function(_Tab tab) onSelect;
+  final double? width;
+  final VoidCallback? onToggleCollapse;
 
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      width: compact ? 76 : _width,
+      width: width ?? (compact ? 76 : _width),
       child: SafeArea(
         right: false,
         child: Padding(
@@ -685,7 +1048,7 @@ class _NavRail extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              _RailBrand(compact: compact),
+              _RailBrand(compact: compact, onToggleCollapse: onToggleCollapse),
               const SizedBox(height: 26),
               for (final tab in tabs)
                 Padding(
@@ -707,9 +1070,10 @@ class _NavRail extends StatelessWidget {
 }
 
 class _RailBrand extends StatelessWidget {
-  const _RailBrand({this.compact = false});
+  const _RailBrand({this.compact = false, this.onToggleCollapse});
 
   final bool compact;
+  final VoidCallback? onToggleCollapse;
 
   @override
   Widget build(BuildContext context) {
@@ -719,36 +1083,47 @@ class _RailBrand extends StatelessWidget {
       padding: EdgeInsets.only(left: compact ? 0 : 6),
       child: Row(
         mainAxisAlignment:
-            compact ? MainAxisAlignment.center : MainAxisAlignment.start,
+            compact ? MainAxisAlignment.center : MainAxisAlignment.spaceBetween,
         children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(9),
-            child: Image.asset(
-              'assets/icon.png',
-              width: 30,
-              height: 30,
-              filterQuality: FilterQuality.medium,
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(9),
+                child: Image.asset(
+                  'assets/icon.png',
+                  width: 30,
+                  height: 30,
+                  filterQuality: FilterQuality.medium,
+                ),
+              ),
+              if (!compact) ...[
+                const SizedBox(width: 10),
+                Text(
+                  'Streak',
+                  style: settings.isExpressStyle
+                      ? ExpressType.headline.at(
+                          17,
+                          weight: 800,
+                          color: scheme.onSurface,
+                        )
+                      : settings.isMinimalStyle
+                      ? MinimalType.title(17, weight: 700, color: scheme.onSurface)
+                      : TextStyle(
+                          fontSize: 17,
+                          fontWeight: FontWeight.w800,
+                          color: scheme.onSurface,
+                        ),
+                ),
+              ],
+            ],
+          ),
+          if (!compact && onToggleCollapse != null)
+            _PanelPillButton(
+              icon: LucideIcons.panelLeftClose,
+              tooltip: 'Collapse sidebar',
+              onTap: onToggleCollapse!,
             ),
-          ),
-          if (!compact) ...[
-          const SizedBox(width: 10),
-          Text(
-            'Streak',
-            style: settings.isExpressStyle
-                ? ExpressType.headline.at(
-                    17,
-                    weight: 800,
-                    color: scheme.onSurface,
-                  )
-                : settings.isMinimalStyle
-                ? MinimalType.title(17, weight: 700, color: scheme.onSurface)
-                : TextStyle(
-                    fontSize: 17,
-                    fontWeight: FontWeight.w800,
-                    color: scheme.onSurface,
-                  ),
-          ),
-          ],
         ],
       ),
     );
