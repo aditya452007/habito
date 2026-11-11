@@ -37,7 +37,9 @@ import 'package:streak/features/todos/state/todos_controller.dart';
 import 'package:streak/services/auto_sync.dart';
 import 'package:streak/services/health_steps.dart';
 import 'package:streak/services/home_widget_service.dart';
+import 'package:streak/services/laptop_activity_store.dart';
 import 'package:streak/services/widget_action_service.dart';
+import 'package:streak/services/windows_activity_tracker.dart';
 
 class HomeShell extends StatefulWidget {
   const HomeShell({super.key});
@@ -257,6 +259,10 @@ class _HomeShellState extends State<HomeShell>
     if (state == AppLifecycleState.paused || state == AppLifecycleState.hidden) {
       _leftAt ??= DateTime.now();
       unawaited(AutoSync.pause());
+      if (Platform.isWindows) {
+        LaptopActivityStore.flushSync();
+        WindowsActivityTracker.trimMemory();
+      }
     }
     if (state == AppLifecycleState.resumed) {
       final left = _leftAt;

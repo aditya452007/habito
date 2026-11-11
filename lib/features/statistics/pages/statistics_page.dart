@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
@@ -18,6 +20,7 @@ import 'package:streak/features/habits/state/habits_controller.dart';
 import 'package:streak/features/island/widgets/island_entry.dart';
 import 'package:streak/features/habits/widgets/saved_money.dart';
 import 'package:streak/features/settings/state/settings_controller.dart';
+import 'package:streak/features/statistics/widgets/laptop_activity_card.dart';
 import 'package:streak/features/statistics/data/habit_stats.dart';
 import 'package:streak/features/statistics/pages/express_statistics_page.dart';
 import 'package:streak/features/statistics/pages/minimal_statistics_page.dart';
@@ -245,6 +248,12 @@ class _StatisticsPageState extends State<StatisticsPage> {
               ),
               const SizedBox(height: 24),
               _TrendCard(stats: stats, color: accent),
+              if (Platform.isWindows) ...[
+                const SizedBox(height: 16),
+                StatReveal(
+                  child: LaptopActivityCard(accent: accent),
+                ),
+              ],
               const SizedBox(height: 16),
               StatReveal(
                 child: StatCard(

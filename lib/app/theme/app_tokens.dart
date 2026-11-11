@@ -63,6 +63,10 @@ class AppTokens extends ThemeExtension<AppTokens> {
 }
 
 extension AppTokensX on BuildContext {
-  AppTokens get tokens => Theme.of(this).extension<AppTokens>()!;
+  AppTokens get tokens =>
+      Theme.of(this).extension<AppTokens>() ??
+      (Theme.of(this).brightness == Brightness.dark
+          ? AppTokens.dark
+          : AppTokens.light);
   ColorScheme get colors => Theme.of(this).colorScheme;
 }

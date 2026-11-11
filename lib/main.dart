@@ -32,11 +32,13 @@ import 'package:streak/services/focus_service.dart';
 import 'package:streak/services/folder_sync.dart';
 import 'package:streak/services/home_widget_service.dart';
 import 'package:streak/services/image_cleanup_service.dart';
+import 'package:streak/services/laptop_activity_store.dart';
 import 'package:streak/services/notification_service.dart';
 import 'package:streak/core/shortcuts/app_shortcuts.dart';
 import 'package:streak/services/portable_traces.dart';
 import 'package:streak/services/todos_widget_service.dart';
 import 'package:streak/services/widget_action_service.dart';
+import 'package:streak/services/windows_activity_tracker.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -59,6 +61,10 @@ Future<void> main() async {
 
 Future<AppExitResponse> _leaveNoTrace() async {
   try {
+    if (Platform.isWindows) {
+      LaptopActivityStore.flushSync();
+      WindowsActivityTracker.stop();
+    }
     await NotificationService().cancelAll();
     await PortableTraces.clear(NotificationService.windowsAppId);
   } catch (e) {
@@ -110,6 +116,9 @@ Future<void> _startup() async {
     debugPrint('Startup init (notifications/widget) failed: $e\n$s');
   }
   if (isPortable) AppLifecycleListener(onExitRequested: _leaveNoTrace);
+  if (Platform.isWindows) {
+    WindowsActivityTracker.start();
+  }
 
   _appChannel.setMethodCallHandler((call) async {
     if (call.method == 'openHabit') {
