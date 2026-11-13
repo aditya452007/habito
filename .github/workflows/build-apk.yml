@@ -43,17 +43,31 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Determine release tag
         id: tag
         run: |
+          git fetch --tags --force
           if [ -n "${{ inputs.tag }}" ]; then
             TAG="${{ inputs.tag }}"
           elif [[ "${{ github.ref }}" == refs/tags/* ]]; then
             TAG="${{ github.ref_name }}"
           else
-            VERSION=$(grep '^version: ' pubspec.yaml | sed 's/version: //' | cut -d '+' -f 1 | tr -d '[:space:]')
-            TAG="v${VERSION}"
+            BASE_VERSION=$(grep '^version: ' pubspec.yaml | sed 's/version: //' | cut -d '+' -f 1 | tr -d '[:space:]')
+            if ! git rev-parse "v${BASE_VERSION}" >/dev/null 2>&1; then
+              TAG="v${BASE_VERSION}"
+            else
+              MAJOR_MINOR=$(echo "$BASE_VERSION" | cut -d '.' -f 1,2)
+              LATEST_PATCH=$(git tag -l "v${MAJOR_MINOR}.*" | sed "s/^v${MAJOR_MINOR}\.//" | grep -E '^[0-9]+$' | sort -n | tail -n 1)
+              if [ -n "$LATEST_PATCH" ]; then
+                NEXT_PATCH=$((LATEST_PATCH + 1))
+                TAG="v${MAJOR_MINOR}.${NEXT_PATCH}"
+              else
+                TAG="v${BASE_VERSION}.1"
+              fi
+            fi
           fi
           echo "tag=$TAG" >> $GITHUB_OUTPUT
           echo "Determined release tag: $TAG"
@@ -125,7 +139,9 @@ jobs:
         with:
           tag_name: ${{ steps.tag.outputs.tag }}
           name: ${{ steps.tag.outputs.tag }}
+          target_commitish: ${{ github.sha }}
           generate_release_notes: true
+          make_latest: true
           files: |
             build/app/outputs/flutter-apk/Habito-arm64-v8a.apk
             build/app/outputs/flutter-apk/Habito-armeabi-v7a.apk

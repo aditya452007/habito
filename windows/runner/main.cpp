@@ -12,6 +12,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev,
   HANDLE single_instance_mutex =
       ::CreateMutexW(nullptr, TRUE, L"HabitoSingleInstance");
   const DWORD last_error = ::GetLastError();
+  (void)single_instance_mutex;
 
   std::vector<std::string> command_line_arguments =
       GetCommandLineArguments();
@@ -19,6 +20,9 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev,
       std::find(command_line_arguments.begin(), command_line_arguments.end(),
                 "--background") != command_line_arguments.end();
   if (last_error == ERROR_ALREADY_EXISTS) {
+    if (single_instance_mutex != nullptr) {
+      ::CloseHandle(single_instance_mutex);
+    }
     HWND running = ::FindWindowW(L"FLUTTER_RUNNER_WIN32_WINDOW", L"Habito");
     if (running && !background_launch) {
       ::ShowWindow(running, SW_SHOWNORMAL);
@@ -59,6 +63,9 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev,
   Win32Window::Point origin(10, 10);
   Win32Window::Size size(1500, 920);
   if (!window.Create(L"Habito", origin, size)) {
+    if (single_instance_mutex != nullptr) {
+      ::CloseHandle(single_instance_mutex);
+    }
     return EXIT_FAILURE;
   }
   window.SetQuitOnClose(true);
@@ -70,5 +77,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev,
   }
 
   ::CoUninitialize();
+  if (single_instance_mutex != nullptr) {
+    ::CloseHandle(single_instance_mutex);
+  }
   return EXIT_SUCCESS;
 }
