@@ -207,6 +207,10 @@ class WindowsActivityTracker {
     final activeExe = _getForegroundProcessName();
     if (activeExe != null && activeExe.isNotEmpty) {
       LaptopActivityStore.recordActiveUsage(activeExe, _sampleIntervalSeconds);
+    } else {
+      // User is active (within idle threshold) but the foreground process couldn't
+      // be queried (e.g. elevated window, task switching, lockscreen). Record as system.
+      LaptopActivityStore.recordActiveUsage('explorer.exe', _sampleIntervalSeconds);
     }
   }
 

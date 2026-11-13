@@ -153,7 +153,7 @@ class _HeaderSummary extends StatelessWidget {
                     const SizedBox(width: 8),
                     Flexible(
                       child: Text(
-                        '(${activity.formattedIdleTime} idle)',
+                        '(${activity.formattedIdleTime} idle · ${activity.formattedAwakeTime} awake)',
                         style: TextStyle(
                           fontSize: 12,
                           color: muted,

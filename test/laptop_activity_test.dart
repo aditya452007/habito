@@ -50,6 +50,8 @@ void main() {
       expect(today.formattedActiveTime, '1h 45m');
       expect(today.totalIdleSeconds, 600);
       expect(today.formattedIdleTime, '10m');
+      expect(today.totalAwakeSeconds, 6900); // 1h 55m
+      expect(today.formattedAwakeTime, '1h 55m');
 
       expect(today.apps.length, 2);
       expect(today.apps.first.displayName, 'Visual Studio Code');

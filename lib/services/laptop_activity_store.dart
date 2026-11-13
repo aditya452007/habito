@@ -66,6 +66,17 @@ class DayLaptopActivity {
     return '${minutes}m';
   }
 
+  int get totalAwakeSeconds => totalActiveSeconds + totalIdleSeconds;
+
+  String get formattedAwakeTime {
+    final hours = totalAwakeSeconds ~/ 3600;
+    final minutes = (totalAwakeSeconds % 3600) ~/ 60;
+    if (hours > 0) {
+      return '${hours}h ${minutes}m';
+    }
+    return '${minutes}m';
+  }
+
   Map<AppCategory, int> get categorySeconds {
     final map = <AppCategory, int>{};
     for (final app in apps) {

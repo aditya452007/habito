@@ -9,16 +9,19 @@
 
 int APIENTRY wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev,
                       _In_ wchar_t *command_line, _In_ int show_command) {
-  ::CreateMutexW(nullptr, TRUE, L"HabitoSingleInstance");
+  HANDLE single_instance_mutex =
+      ::CreateMutexW(nullptr, TRUE, L"HabitoSingleInstance");
+  const DWORD last_error = ::GetLastError();
+
   std::vector<std::string> command_line_arguments =
       GetCommandLineArguments();
   const bool background_launch =
       std::find(command_line_arguments.begin(), command_line_arguments.end(),
                 "--background") != command_line_arguments.end();
-  if (::GetLastError() == ERROR_ALREADY_EXISTS) {
+  if (last_error == ERROR_ALREADY_EXISTS) {
     HWND running = ::FindWindowW(L"FLUTTER_RUNNER_WIN32_WINDOW", L"Habito");
     if (running && !background_launch) {
-      ::ShowWindow(running, SW_SHOW);
+      ::ShowWindow(running, SW_SHOWNORMAL);
       if (::IsIconic(running)) ::ShowWindow(running, SW_RESTORE);
       if (!::IsZoomed(running)) {
         RECT frame;
