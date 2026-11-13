@@ -1,0 +1,443 @@
+import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:package_info_plus/package_info_plus.dart';
+import 'package:streak/app/theme/app_theme.dart';
+import 'package:streak/app/theme/app_tokens.dart';
+import 'package:streak/core/extensions/inset_extensions.dart';
+import 'package:streak/core/i18n/l10n.dart';
+import 'package:streak/core/utils/app_snackbar.dart';
+import 'package:streak/core/widgets/entrance.dart';
+import 'package:streak/core/widgets/typewriter.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:streak/core/express/express_page.dart';
+import 'package:provider/provider.dart';
+import 'package:streak/features/settings/state/settings_controller.dart';
+import 'package:streak/core/express/express_motion.dart';
+import 'package:streak/core/express/express_surface.dart';
+import 'package:streak/core/express/express_type.dart';
+import 'package:streak/core/minimal/minimal_type.dart';
+
+const _kGitHubUrl = 'https://github.com/aditya452007/habito';
+const _kProfileUrl = 'https://github.com/aditya452007';
+const _kCoffeeUrl = 'https://github.com/aditya452007';
+const _base = Duration(milliseconds: 340);
+
+class AboutPage extends StatefulWidget {
+  const AboutPage({super.key});
+
+  @override
+  State<AboutPage> createState() => _AboutPageState();
+}
+
+class _AboutPageState extends State<AboutPage> {
+  String _version = '';
+
+  @override
+  void initState() {
+    super.initState();
+    PackageInfo.fromPlatform().then((info) {
+      if (mounted) {
+        setState(() => _version = 'v${info.version}');
+      }
+    });
+  }
+
+  Future<void> _open(String url) async {
+    try {
+      await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+    } catch (_) {
+      if (mounted) AppSnackbar.error(context, url);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = context.colors;
+    final muted = context.tokens.muted;
+
+    final style = context.watch<SettingsController>().appStyle;
+    final express = style == 2;
+
+    final nameStyle = switch (style) {
+      2 => ExpressType.display.at(
+          48,
+          height: 1,
+          spacing: -0.6,
+          color: scheme.onSurface,
+        ),
+      1 => MinimalType.display(46, color: scheme.onSurface, height: 1),
+      _ => TextStyle(
+          fontFamily: AppTheme.classicFont,
+          fontSize: 46,
+          fontWeight: FontWeight.w800,
+          height: 1.0,
+          letterSpacing: -1,
+          color: scheme.onSurface,
+        ),
+    };
+
+    final subtitleStyle = switch (style) {
+      2 => ExpressType.headline.at(18, height: 1.35, weight: 700, color: muted),
+      1 => MinimalType.body(18, height: 1.35, color: muted, weight: 500),
+      _ => TextStyle(
+          fontFamily: AppTheme.classicFont,
+          fontWeight: FontWeight.w500,
+          fontSize: 18,
+          height: 1.3,
+          color: muted,
+        ),
+    };
+
+    final storyStyle = switch (style) {
+      2 => ExpressType.body.at(
+          15,
+          height: 1.7,
+          color: scheme.onSurface.withValues(alpha: 0.85),
+        ),
+      1 => MinimalType.body(
+          15,
+          height: 1.7,
+          color: scheme.onSurface.withValues(alpha: 0.85),
+        ),
+      _ => TextStyle(
+          fontSize: 15,
+          height: 1.7,
+          color: scheme.onSurface.withValues(alpha: 0.85),
+        ),
+    };
+
+    return Scaffold(
+      appBar: express
+          ? expressBar()
+          : AppBar(
+              backgroundColor: Colors.transparent,
+              elevation: 0,
+            ),
+      body: ListView(
+        padding: context.pagePadding(24, 8, 24, 40),
+        children: [
+          Entrance(
+            delay: _base,
+            child: Center(
+              child: TweenAnimationBuilder<double>(
+                tween: Tween(begin: 0.88, end: 1),
+                duration: const Duration(milliseconds: 620),
+                curve: Curves.easeOutBack,
+                builder: (context, scale, child) =>
+                    Transform.scale(scale: scale, child: child),
+                child: Container(
+                  width: 76,
+                  height: 76,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                        color: scheme.primary.withValues(alpha: 0.28),
+                        blurRadius: 28,
+                        offset: const Offset(0, 10),
+                      ),
+                    ],
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(20),
+                    child: Image.asset(
+                      'assets/icon.png',
+                      width: 76,
+                      height: 76,
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 24),
+          Entrance(
+            index: 1,
+            delay: _base,
+            child: Typewriter(
+              text: 'Habito',
+              duration: const Duration(milliseconds: 640),
+              delay: const Duration(milliseconds: 120),
+              style: nameStyle,
+            ),
+          ),
+          const SizedBox(height: 10),
+          Entrance(
+            index: 2,
+            delay: _base,
+            child: Typewriter(
+              text: context.l10n.about_subtitle,
+              duration: const Duration(milliseconds: 1000),
+              delay: const Duration(milliseconds: 380),
+              style: subtitleStyle,
+            ),
+          ),
+          const SizedBox(height: 30),
+          Entrance(
+            index: 3,
+            delay: _base,
+            child: Typewriter(
+              text: context.l10n.about_story,
+              duration: const Duration(milliseconds: 2200),
+              delay: const Duration(milliseconds: 1400),
+              style: storyStyle,
+            ),
+          ),
+          const SizedBox(height: 32),
+          Entrance(
+            index: 4,
+            delay: _base,
+            child: Row(
+              children: [
+                Expanded(
+                  child: _LinkButton(
+                    icon: LucideIcons.star,
+                    label: 'GitHub',
+                    onTap: () => _open(_kGitHubUrl),
+                  ),
+                ),
+                const SizedBox(width: Express.groupGap),
+                Expanded(
+                  child: _LinkButton(
+                    icon: LucideIcons.coffee,
+                    label: context.l10n.buy_coffee,
+                    onTap: () => _open(_kCoffeeUrl),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 36),
+          Entrance(
+            index: 5,
+            delay: _base,
+            child: Center(
+              child: _DeveloperCard(onTap: () => _open(_kProfileUrl)),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Entrance(
+            index: 6,
+            delay: _base,
+            child: Center(
+              child: Text(
+                _version,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.5,
+                  color: muted.withValues(alpha: 0.7),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 14),
+          Entrance(
+            index: 7,
+            delay: _base,
+            child: GestureDetector(
+              onTap: () => _open('$_kGitHubUrl/blob/main/LICENSE'),
+              child: Text(
+                context.l10n.about_legal,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 11.5,
+                  height: 1.45,
+                  color: muted.withValues(alpha: 0.7),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DeveloperCard extends StatelessWidget {
+  const _DeveloperCard({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = context.colors;
+    final muted = context.tokens.muted;
+
+    return Semantics(
+      link: true,
+      label: 'Developer Aaditya Thakur (@aditya452007)',
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(20),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+            decoration: BoxDecoration(
+              color: scheme.surfaceContainerHighest.withValues(alpha: 0.55),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: scheme.outlineVariant.withValues(alpha: 0.35),
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(color: scheme.primary, width: 2),
+                    boxShadow: [
+                      BoxShadow(
+                        color: scheme.primary.withValues(alpha: 0.25),
+                        blurRadius: 10,
+                        offset: const Offset(0, 3),
+                      ),
+                    ],
+                  ),
+                  child: ClipOval(
+                    child: Image.asset(
+                      'assets/developer.png',
+                      width: 48,
+                      height: 48,
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 14),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'Aaditya Thakur',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: -0.2,
+                            color: scheme.onSurface,
+                          ),
+                        ),
+                        const SizedBox(width: 5),
+                        Icon(LucideIcons.badgeCheck, size: 16, color: scheme.primary),
+                      ],
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      '@aditya452007 • Bhopal, India',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                        color: muted,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(width: 14),
+                Icon(
+                  LucideIcons.externalLink,
+                  size: 15,
+                  color: muted.withValues(alpha: 0.7),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _LinkButton extends StatelessWidget {
+  const _LinkButton({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = context.colors;
+    if (context.watch<SettingsController>().isExpressStyle) {
+      return ExpressSquish(
+        onTap: onTap,
+        child: Container(
+          height: 56,
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          decoration: BoxDecoration(
+            color: expressSurface(context),
+            borderRadius: BorderRadius.circular(29),
+            border: expressHairline(context),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, size: 17, color: scheme.primary),
+              const SizedBox(width: 8),
+              Flexible(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    label,
+                    maxLines: 1,
+                    style: ExpressType.headline.at(
+                      14,
+                      weight: 800,
+                      width: 100,
+                      color: scheme.onSurface,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+    return Material(
+      color: scheme.surfaceContainerHighest,
+      borderRadius: BorderRadius.circular(14),
+      clipBehavior: Clip.antiAlias,
+      child: Semantics(
+        button: true,
+        child: InkWell(
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 13),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(icon, size: 17, color: scheme.onSurface),
+                const SizedBox(width: 8),
+                Flexible(
+                  child: Text(
+                    label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: scheme.onSurface,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}

@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=Habito
+Comment=A minimal habit tracker that helps you build lasting habits
+Exec=Habito
+Icon=com.habito.app
+Terminal=false
+Categories=Utility;
+Keywords=habit;habits;tracker;
+StartupWMClass=com.habito.app

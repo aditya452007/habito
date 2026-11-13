@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Habito</string>
+    <string name="widget_description">Track your habits and build streaks</string>
+    <string name="widget_heatmap_label">Habito heatmap</string>
+    <string name="widget_habit_label">Habito habits</string>
+    <string name="widget_today_label">Habito today</string>
+    <string name="widget_stats_label">Habito summary</string>
+    <string name="widget_focus_label">Habito focus</string>
+    <string name="widget_focus_board_label">Habito focus board</string>
+    <string name="widget_todos_label">Habito to-do</string>
+    <string name="widget_todos_description">See what is left to do today</string>
+</resources>
